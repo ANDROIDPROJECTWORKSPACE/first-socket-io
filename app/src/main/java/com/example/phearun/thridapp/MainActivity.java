@@ -10,11 +10,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.net.URISyntaxException;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
+
+import static android.R.id.message;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -26,12 +31,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
         try {
             IO.Options opts = new IO.Options();
             opts.forceNew = true;
             opts.reconnection = true;
-            socket = IO.socket("http://192.168.178.143:3000", opts);
+            socket = IO.socket("http://192.168.178.127:3000/chat", opts);
 
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -39,7 +43,6 @@ public class MainActivity extends AppCompatActivity {
 
         socket.on(Socket.EVENT_CONNECT, this.onConnectHandler);
         socket.on(Socket.EVENT_DISCONNECT, this.onDisConnectHandler);
-
         socket.on("message", this.onMessageHandler);
 
         socket.connect();
@@ -52,9 +55,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
+                JSONObject obj = new JSONObject();
+                try {
+                    obj.put("username", "Phearun");
+                    obj.put("message", txtMessage.getText() + "");
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
                 Toast.makeText(MainActivity.this, "Sending...", Toast.LENGTH_SHORT).show();
 
-                socket.emit("chat", txtMessage.getText().toString());
+                socket.emit("message", obj);
             }
         });
 
@@ -80,20 +92,33 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void call(Object... args) {
 
-            final TextView tvDisplay = (TextView) findViewById(R.id.textView2);
-            final String message = args[0].toString();
-            Log.e("ooooo", "onMessage");
+            JSONObject obj = new JSONObject();
+            obj = (JSONObject) args[0];
 
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
-                    tvDisplay.append("Anonymous : "  + message + "\r\n");
-                }
-            });
+            Log.e("ooooo", "onMessage" + obj);
+
+            try {
+                show(obj.get("username") +"", obj.get("message") + "");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
         }
     };
 
+    public void show(final String username, final String message){
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                final TextView tvDisplay = (TextView) findViewById(R.id.textView2);
+
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                tvDisplay.append(username + ": " + message + "\r\n");
+            }
+        });
+
+    }
 
 
 }
