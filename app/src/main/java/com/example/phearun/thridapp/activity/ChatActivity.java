@@ -1,14 +1,19 @@
-package com.example.phearun.thridapp;
+package com.example.phearun.thridapp.activity;
 
+import android.graphics.Path;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
+import com.example.phearun.thridapp.R;
+import com.example.phearun.thridapp.url.URL;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,12 +24,12 @@ import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
-import static android.R.id.message;
 
-
-public class MainActivity extends AppCompatActivity {
+public class ChatActivity extends AppCompatActivity {
 
     private Socket socket;
+
+    ScrollView scrollView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
             IO.Options opts = new IO.Options();
             opts.forceNew = true;
             opts.reconnection = true;
-            socket = IO.socket("http://192.168.178.127:3000/chat", opts);
+            socket = IO.socket(URL.CHAT_NAMESPACE, opts);
 
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -47,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
 
         socket.connect();
 
+        scrollView = (ScrollView) findViewById(R.id.myScrollView);
         final EditText txtMessage = (EditText) findViewById(R.id.editText);
         Button btnSend = (Button) findViewById(R.id.button);
 
@@ -64,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
 
-                Toast.makeText(MainActivity.this, "Sending...", Toast.LENGTH_SHORT).show();
+                Toast.makeText(ChatActivity.this, "Sending...", Toast.LENGTH_SHORT).show();
 
                 socket.emit("message", obj);
             }
@@ -92,33 +98,32 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void call(Object... args) {
 
-            JSONObject obj = new JSONObject();
-            obj = (JSONObject) args[0];
-
+            JSONObject obj = (JSONObject) args[0];
             Log.e("ooooo", "onMessage" + obj);
 
             try {
-                show(obj.get("username") +"", obj.get("message") + "");
+                renderView(obj.get("username") +"", obj.get("message") + "");
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-
         }
     };
 
-    public void show(final String username, final String message){
+    public void renderView(final String username, final String message){
 
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 final TextView tvDisplay = (TextView) findViewById(R.id.textView2);
 
-                Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                Toast.makeText(ChatActivity.this, message, Toast.LENGTH_SHORT).show();
                 tvDisplay.append(username + ": " + message + "\r\n");
+
+                scrollView.scrollTo(0, 0);
+
             }
         });
 
     }
-
 
 }

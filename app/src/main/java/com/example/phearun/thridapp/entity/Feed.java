@@ -1,4 +1,4 @@
-package com.example.phearun.thridapp;
+package com.example.phearun.thridapp.entity;
 
 import java.util.List;
 

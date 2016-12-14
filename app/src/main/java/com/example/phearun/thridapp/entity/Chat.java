@@ -1,4 +1,4 @@
-package com.example.phearun.thridapp;
+package com.example.phearun.thridapp.entity;
 
 /**
  * Created by Phearun on 12/14/2016.

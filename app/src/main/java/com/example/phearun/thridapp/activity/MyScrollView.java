@@ -1,7 +1,9 @@
-package com.example.phearun.thridapp;
+package com.example.phearun.thridapp.activity;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+
+import com.example.phearun.thridapp.R;
 
 public class MyScrollView extends AppCompatActivity {
 

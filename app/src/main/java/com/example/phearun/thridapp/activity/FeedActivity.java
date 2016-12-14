@@ -1,4 +1,4 @@
-package com.example.phearun.thridapp;
+package com.example.phearun.thridapp.activity;
 
 import android.content.Context;
 import android.support.v7.app.AppCompatActivity;
@@ -9,9 +9,14 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
 
+import com.example.phearun.thridapp.listener.ItemClickListener;
+import com.example.phearun.thridapp.adapter.MyFeedAdapter;
+import com.example.phearun.thridapp.R;
+import com.example.phearun.thridapp.entity.Feed;
+import com.example.phearun.thridapp.url.URL;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -25,7 +30,7 @@ import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
-public class FeedActivity extends AppCompatActivity implements ItemClickListener{
+public class FeedActivity extends AppCompatActivity implements ItemClickListener {
 
     private RecyclerView mRecyclerView;
     private List<Feed> mFeeds = new ArrayList<>();
@@ -69,7 +74,13 @@ public class FeedActivity extends AppCompatActivity implements ItemClickListener
         @Override
         public void call(Object... args) {
             Log.d("SOCKET", "all post");
-            JSONArray jsonArray = (JSONArray) args[1];
+
+            String jsonString = args[1].toString();
+
+            List<Feed> feeds = new Gson().fromJson(jsonString, new TypeToken<List<Feed>>(){}.getType());
+            mFeeds.addAll(feeds);
+
+            /*JSONArray jsonArray = (JSONArray) args[1];
 
             for(int i=0; i<jsonArray.length(); i++){
                 try {
@@ -83,7 +94,7 @@ public class FeedActivity extends AppCompatActivity implements ItemClickListener
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-            }
+            }*/
             Log.d("SOCKET", mFeeds + "");
             runOnUiThread(new Runnable() {
                 @Override
@@ -99,14 +110,18 @@ public class FeedActivity extends AppCompatActivity implements ItemClickListener
         @Override
         public void call(Object... args) {
 
-            final JSONObject obj = (JSONObject) args[0];
+            String jsonString = args[0].toString();
 
-            Log.e("SOCKET", "onMessage" + obj);
+            final Feed feed = new Gson().fromJson(jsonString, Feed.class);
+
+            //final JSONObject obj = (JSONObject) args[0];
+
+            Log.e("SOCKET", "onMessage" + feed);
 
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Feed feed = new Feed();
+                    /*Feed feed = new Feed();
                     try {
                         feed.setId(obj.getString("id"));
                         feed.setUsername(obj.getString("username"));
@@ -115,8 +130,9 @@ public class FeedActivity extends AppCompatActivity implements ItemClickListener
 
                     } catch (JSONException e) {
                         e.printStackTrace();
-                    }
+                    }*/
                     //mFeeds.add(feed);
+
                     mFeeds.add(0, feed);
 
                     //myFeedAdapter.notifyItemInserted(mFeeds.size()-1);
@@ -188,7 +204,7 @@ public class FeedActivity extends AppCompatActivity implements ItemClickListener
             IO.Options opts = new IO.Options();
             opts.forceNew = true;
             opts.reconnection = true;
-            socket = IO.socket("http://192.168.178.127:3000/post", opts);
+            socket = IO.socket(URL.FEED_NAMESPACE, opts);
 
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -210,7 +226,8 @@ public class FeedActivity extends AppCompatActivity implements ItemClickListener
         socket.off("remove post");
         socket.off("removed post");
         socket.off("update like");
-        socket.close();
+
+        socket.disconnect();
     }
 
     @Override

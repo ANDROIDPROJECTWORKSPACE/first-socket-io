@@ -8,7 +8,7 @@
     android:paddingLeft="1dp"
     android:paddingRight="1dp"
     android:paddingTop="1dp"
-    tools:context="com.example.phearun.thridapp.FeedActivity">
+    tools:context="com.example.phearun.thridapp.activity.FeedActivity">
     <EditText
         android:hint="What is your mind?"
         android:layout_width="match_parent"
