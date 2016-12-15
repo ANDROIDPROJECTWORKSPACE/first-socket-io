@@ -6,9 +6,11 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.example.phearun.thridapp.listener.ItemClickListener;
 import com.example.phearun.thridapp.adapter.MyFeedAdapter;
@@ -25,7 +27,10 @@ import org.json.JSONObject;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
+import io.socket.client.Ack;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
@@ -41,6 +46,20 @@ public class FeedActivity extends AppCompatActivity implements ItemClickListener
 
     EditText txtPost;
     Button btnPost;
+    TextView tvTyping;
+
+    Timer timer = new Timer();
+    boolean isTimerSet;
+
+    private View.OnKeyListener onKeyUpEvent = new View.OnKeyListener() {
+        @Override
+        public boolean onKey(View v, int keyCode, KeyEvent event) {
+            if(event.getAction() == KeyEvent.ACTION_UP){
+                socket.emit("typing", "Phearun");
+            }
+            return false;
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +72,11 @@ public class FeedActivity extends AppCompatActivity implements ItemClickListener
 
         txtPost = (EditText) findViewById(R.id.txtPost);
         btnPost = (Button) findViewById(R.id.btnPost);
+        tvTyping = (TextView) findViewById(R.id.tvTyping);
+
         btnPost.setOnClickListener(this.onButtonPostClick);
+        txtPost.setOnKeyListener(this.onKeyUpEvent);
+        tvTyping.setVisibility(View.GONE);
     }
     private Emitter.Listener onConnectEvent = new Emitter.Listener() {
         @Override
@@ -179,11 +202,34 @@ public class FeedActivity extends AppCompatActivity implements ItemClickListener
         });
     }
 
+    private Emitter.Listener onTypingEvent = new Emitter.Listener() {
+        @Override
+        public void call(Object... args) {
+            renderTypingView(View.VISIBLE);
+        }
+    };
+
+    private Emitter.Listener onStopTypingEvent = new Emitter.Listener() {
+        @Override
+        public void call(Object... args) {
+            renderTypingView(View.INVISIBLE);
+        }
+    };
+
     public void renderView(){
         mRecyclerView = (RecyclerView) findViewById(R.id.mRecycler);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(context));
         myFeedAdapter = new MyFeedAdapter(mFeeds, context);
         mRecyclerView.setAdapter(myFeedAdapter);
+    }
+
+    private void renderTypingView(final int visibility){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                tvTyping.setVisibility(visibility);
+            }
+        });
     }
 
     @Override
@@ -216,18 +262,25 @@ public class FeedActivity extends AppCompatActivity implements ItemClickListener
         socket.on("new post", this.onNewPostEvent);
         socket.on("removed post", this.onRemovePostEvent);
         socket.on("update like", this.onLikePostEvent);
+        socket.on("typing", this.onTypingEvent);
+        socket.on("stop typing", this.onStopTypingEvent);
 
         socket.connect();
     }
 
     public void unbindEventListener(){
-        socket.off("all posts");
-        socket.off("new post");
-        socket.off("remove post");
-        socket.off("removed post");
-        socket.off("update like");
 
         socket.disconnect();
+
+        socket.off(Socket.EVENT_CONNECT, this.onConnectEvent);
+        socket.off(Socket.EVENT_DISCONNECT, this.onDisconnectEvent);
+        socket.off("all posts", this.onAllPostEvent);
+        socket.off("new post", this.onNewPostEvent);
+        socket.off("removed post", this.onRemovePostEvent);
+        socket.off("update like", this.onLikePostEvent);
+        socket.off("typing", this.onTypingEvent);
+        socket.off("stop typing", this.onStopTypingEvent);
+
     }
 
     @Override
@@ -246,13 +299,30 @@ public class FeedActivity extends AppCompatActivity implements ItemClickListener
                 String jsonString = new Gson().toJson(feed);
 
                 JSONObject jsonObject = new JSONObject(jsonString);
-                socket.emit("new post", jsonObject);
+                socket.emit("new post", jsonObject, new Ack() {
+                    @Override
+                    public void call(Object... args) {
+                        clearText();
+                    }
+                });
+
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         }
     };
 
+    //TODO: Clear status text
+    private void clearText(){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                txtPost.setText("");
+            }
+        });
+    }
+
+    //TODO: scroll recycler view to top
     private void scrollToTop(){
         mRecyclerView.scrollToPosition(0);
     }

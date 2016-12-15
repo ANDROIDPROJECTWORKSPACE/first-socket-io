@@ -5,7 +5,7 @@ package com.example.phearun.thridapp.url;
  */
 
 public interface URL {
-    String ROOT_NAMESPACE = "http://192.168.43.40:3000/";
-    String CHAT_NAMESPACE = "http://192.168.43.40:3000/chat";
-    String FEED_NAMESPACE = "http://192.168.43.40:3000/post";
+    String ROOT_NAMESPACE = "http://192.168.178.127:3000";
+    String CHAT_NAMESPACE = ROOT_NAMESPACE + "/chat";
+    String FEED_NAMESPACE = ROOT_NAMESPACE + "/post";
 }
