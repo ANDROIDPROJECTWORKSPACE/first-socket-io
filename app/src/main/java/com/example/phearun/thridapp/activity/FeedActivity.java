@@ -54,9 +54,9 @@ public class FeedActivity extends AppCompatActivity implements ItemClickListener
     private View.OnKeyListener onKeyUpEvent = new View.OnKeyListener() {
         @Override
         public boolean onKey(View v, int keyCode, KeyEvent event) {
-            if(event.getAction() == KeyEvent.ACTION_UP){
+            /*if(event.getAction() == KeyEvent.ACTION_UP){
                 socket.emit("typing", "Phearun");
-            }
+            }*/
             return false;
         }
     };
